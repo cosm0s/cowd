@@ -1,0 +1,91 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          cowd
+# Required-Start:    $local_fs $remote_fs $network $syslog $named
+# Required-Stop:     $local_fs $remote_fs $network $syslog $named
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# X-Interactive:     true
+# Short-Description: Start/stop cowd service
+# Description:       Start the cowd service D001 - Mooing service (Design)
+# Alberto Pascual
+### END INIT INFO
+
+if [[ $EUID -ne 0 ]]; then
+  echo "You must be a root user" 2>&1
+  exit 1
+fi
+
+NAME=cowd
+DESC="cowd service"
+DAEMON=/usr/sbin/$NAME
+
+PID_FILE="/var/run/${NAME}.pid"
+CONFIG_FILE="-Dcowd_config_path=/etc/cowd/config.properties"
+LOG_FILE="/var/log/cowd"
+COWD_LOG_FILE="-Dcowd_log_path=/var/log/cowd/cowd.log"
+
+JAVA_BIN=$(find /usr/bin -name 'java')
+
+JAVA_COWD_HOME=""
+
+if [ -n "$JAVA_BIN" ]; then
+    JAVA_COWD_HOME=${JAVA_BIN}
+else
+    if [ -n "$JAVA_HOME" ]; then
+        JAVA_COWD_HOME=${JAVA_HOME}/bin/java
+    else
+        echo "[ERROR] Error locating JDK: set $JAVA_HOME"
+        exit 0
+    fi
+fi
+
+MAIN_JAR=`ls -1tr /usr/sbin/cowd-*.jar|tail -1`
+
+case "$1" in
+    start)
+        CMD="${JAVA_COWD_HOME} $CONFIG_FILE $COWD_LOG_FILE -jar ${MAIN_JAR}"
+        echo -n "Starting ${DESC}: "
+        NUID=`id -nu`
+        if [ "$EXEC_USER" == "$NUID" -o  -z "$EXEC_USER" ]; then
+                eval nohup "$CMD" 0<&- &> $LOG_FILE/start.log &
+        else
+                nohup  su - $EXEC_USER -c "$CMD" 0<&- &> $LOG_FILE/start.log &
+        fi
+        echo "$NAME."
+        ;;
+    status)
+        PID=$(ps -ef | grep java |grep ${MAIN_JAR}| grep -v grep |awk '{ print $2}')
+        if [[ -n $PID ]]; then
+                echo "Cowd working with PID=$PID"
+                echo "===================================================================================="
+                ps -ef | grep java |grep ${MAIN_JAR}
+                echo "===================================================================================="
+                exit 0
+        else
+                echo "Cowd is not working !!!"
+                exit 1
+        fi
+        ;;
+    stop)
+        echo -n "Stopping $DESC: "
+        PID=$(ps -ef | grep java |grep ${MAIN_JAR}| grep -v grep |awk '{ print $2}')
+        if [[ -n $PID ]]; then
+                kill -9 $PID
+                exit 0
+        else
+                echo "Cowd is not working !!!"
+                exit 0
+        fi
+        echo "$NAME."
+        rm -f $PIDFILE
+        ;;
+    *)
+        N=/etc/init.d/$NAME
+        echo "Usage: $N {start|stop|restart|force-reload}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0
+

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+COWD_HOME=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+COWD_BIN=${COWD_HOME}/bin
+COWD_LOG=${COWD_HOME}/logs
+COWD_CONF=${COWD_HOME}/conf
+
+JAVA_BIN=$(find /usr/bin -name 'java')
+
+JAVA_COWD_HOME=""
+
+if [ -n "$JAVA_BIN" ]; then
+    JAVA_COWD_HOME=${JAVA_BIN}
+else
+    if [ -n "$JAVA_HOME" ]; then
+        JAVA_COWD_HOME=${JAVA_HOME}/bin/java
+    else
+        echo "[ERROR] Error locating JDK: set $JAVA_HOME"
+        exit 0
+    fi
+fi
+
+MAIN_JAR=`ls -1tr ${COWD_HOME}/bin/cowd-*.jar|tail -1`
+LOG_FILE="-Dcowd_log_path=${COWD_LOG}/cowd.log"
+CONFIG_FILE="-Dcowd_config_path=${COWD_CONF}/config.properties"
+
+${JAVA_COWD_HOME} $CONFIG_FILE $LOG_FILE -jar ${MAIN_JAR} $@
