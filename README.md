@@ -1,5 +1,6 @@
 <b>COWD as a service</b><br><br>
-[![Build Status](https://travis-ci.org/cosm0s/cowd.png?branch=master)](https://travis-ci.org/cosm0s/cowd.svg)https://travis-ci.org/cosm0s/cowd.svg
+[![Build Status](https://travis-ci.org/cosm0s/cowd.png)](https://travis-ci.org/cosm0s/cowd)
+
 <p>chmod +x install-service.sh<br>
 su/br (root) ./install-service.sh<br><br>
 
